@@ -10,17 +10,18 @@
 //Prompt:
 //Proč je po řádku Serial.begin(115200); zpoždění jedna sekunda?
 //**********************************************
-//Zpoždění po Serial.begin(115200); je často používáno k tomu, aby se zajistilo, že sériová komunikace je plně 
-//inicializována předtím, než program pokračuje. Toto zpoždění je obzvláště užitečné při ladění, protože bez něj 
-//by mohly být některé počáteční výstupy ztraceny. Nicméně, v tomto konkrétním kódu to nemusí být nezbytné a může 
-//být odstraněno bez jakýchkoli negativních důsledků. Zpoždění 1 sekundy je zde pravděpodobně zvykem autora kódu.
+//Zpoždění po Serial.begin(115200); je často používáno k tomu, aby se zajistilo, že sériová komunikace 
+//je plně inicializována předtím, než program pokračuje. Toto zpoždění je obzvláště užitečné při 
+//ladění, protože bez něj by mohly být některé počáteční výstupy ztraceny. Nicméně, v tomto konkrétním 
+//kódu to nemusí být nezbytné a může být odstraněno bez jakýchkoli negativních důsledků. Zpoždění 1 
+//sekundy je zde pravděpodobně zvykem autora kódu.
 </pre>
 
 <pre style="background-color: #f2f2f2;">
 //**********************************************
 //Prompt:
-//Můžeš mi, prosím, do předešlého programu doplnit čtení všech parametrů ze senzoru BME280 s výpisem do sériového 
-//monitoru jednou za 1s?
+//Můžeš mi, prosím, do předešlého programu doplnit čtení všech parametrů ze senzoru BME280 s výpisem 
+//do sériového monitoru jednou za 1s?
 //**********************************************
 #include <WiFi.h>
 #include <Adafruit_Sensor.h>
@@ -39,7 +40,8 @@ void setup() {
   Serial.print("Connecting to "); // vypíše text "Connecting to " do sériového monitoru
   Serial.println(ssid); // vypíše jméno Wi-Fi sítě do sériového monitoru
 
-  WiFi.begin(ssid, password); // připojí se k Wi-Fi síti se jménem a heslem uloženým v proměnných ssid a password
+  WiFi.begin(ssid, password); // připojí se k Wi-Fi síti se jménem a heslem uloženým v proměnných 
+                              // ssid a password
 
   while (WiFi.status() != WL_CONNECTED) { // dokud ESP32-C3 není připojeno k Wi-Fi síti
     delay(1000); // čeká 1 sekundu
@@ -52,7 +54,8 @@ void setup() {
   Serial.println(WiFi.localIP()); // vypíše IP adresu přiřazenou ESP32-C3 v síti do sériového monitoru
 
   if (!bme.begin(0x76)) { // pokud se nepodaří inicializovat senzor BME280
-    Serial.println("Could not find a valid BME280 sensor, check wiring!"); // vypíše chybovou hlášku do sériového monitoru
+    Serial.println("Could not find a valid BME280 sensor, check wiring!"); // vypíše chybovou hlášku 
+                                                                            // do sériového monitoru
     while (1); // zastaví program
   }
 }
@@ -60,7 +63,8 @@ void setup() {
 void loop() {
   float temperature = bme.readTemperature(); // načte teplotu ze senzoru BME280
   float humidity = bme.readHumidity(); // načte vlhkost ze senzoru BME280
-  float pressure = bme.readPressure() / 100.0F; // načte tlak ze senzoru BME280 a převede ho na hektopaskaly
+  float pressure = bme.readPressure() / 100.0F; // načte tlak ze senzoru BME280 a převede ho 
+                                                // na hektopaskaly
 
   Serial.print("Temperature = "); // vypíše text "Temperature = " do sériového monitoru
   Serial.print(temperature); // vypíše hodnotu teploty do sériového monitoru
@@ -81,9 +85,9 @@ void loop() {
 <pre style="background-color: #f2f2f2;">
 //**********************************************
 //Prompt:
-//Prosím tě, napiš mi program pro ESP32-C3 v arduino ide 2.0, pro komunikaci po wi-fi s notebookem ve stejné síti. 
-//Rád bych, aby jsem v sériovém monitoru viděl postupně jednotlivé fáze připojování. Místo skutečného SSID a hesla 
-//v programu napiš jen your_SSID a your_PSWD.
+//Prosím tě, napiš mi program pro ESP32-C3 v arduino ide 2.0, pro komunikaci po wi-fi s notebookem 
+//ve stejné síti. Rád bych, aby jsem v sériovém monitoru viděl postupně jednotlivé fáze připojování. 
+//Místo skutečného SSID a hesla v programu napiš jen your_SSID a your_PSWD.
 //**********************************************
 #include <WiFi.h> // přidává knihovnu pro práci s Wi-Fi
 
@@ -98,7 +102,8 @@ void setup() {
   Serial.print("Connecting to "); // vypíše text "Connecting to " do sériového monitoru
   Serial.println(ssid); // vypíše jméno Wi-Fi sítě do sériového monitoru
 
-  WiFi.begin(ssid, password); // připojí se k Wi-Fi síti se jménem a heslem uloženým v proměnných ssid a password
+  WiFi.begin(ssid, password); // připojí se k Wi-Fi síti se jménem a heslem uloženým v proměnných ssid 
+                              // a password
 
   while (WiFi.status() != WL_CONNECTED) { // dokud ESP32-C3 není připojeno k Wi-Fi síti
     delay(1000); // čeká 1 sekundu
@@ -115,8 +120,3 @@ void loop() {
   // your code here
 }
 </pre>
-=======
-# Můj první github projekt
-
-## usmev
->>>>>>> Meteostanice/main
