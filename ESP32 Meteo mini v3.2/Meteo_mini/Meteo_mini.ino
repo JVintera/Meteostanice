@@ -2,6 +2,7 @@
 
 
 
+
 //**********************************************
 //Prompt:
 //Proč je po řádku Serial.begin(115200); zpoždění jedna sekunda?

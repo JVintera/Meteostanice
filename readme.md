@@ -1,6 +1,8 @@
-<<<<<<< HEAD
 <H1>Meteo Mini Meteostanice 2.0</H1>
 <H2>LaskaKit Meteo Mini - ESP-C3-12F</H2>
+
+
+
 <p>Program vytvářen pomocí Chat-GPT4 v prohlížeči MS Edge</p>
 
 <pre style="background-color: #f2f2f2;">
