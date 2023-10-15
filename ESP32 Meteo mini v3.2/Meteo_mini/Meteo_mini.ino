@@ -1,8 +1,7 @@
-<H1>Meteo Mini Meteostanice 2.0</H1>
-<H2>LaskaKit Meteo Mini - ESP-C3-12F</H2>
-<p>Program vytvářen pomocí Chat-GPT4 v prohlížeči MS Edge</p>
+//ESP32C3 Dev Module
 
-<pre style="background-color: #f2f2f2;">
+
+
 //**********************************************
 //Prompt:
 //Proč je po řádku Serial.begin(115200); zpoždění jedna sekunda?
@@ -11,9 +10,9 @@
 //inicializována předtím, než program pokračuje. Toto zpoždění je obzvláště užitečné při ladění, protože bez něj 
 //by mohly být některé počáteční výstupy ztraceny. Nicméně, v tomto konkrétním kódu to nemusí být nezbytné a může 
 //být odstraněno bez jakýchkoli negativních důsledků. Zpoždění 1 sekundy je zde pravděpodobně zvykem autora kódu.
-</pre>
 
-<pre style="background-color: #f2f2f2;">
+
+
 //**********************************************
 //Prompt:
 //Můžeš mi, prosím, do předešlého programu doplnit čtení všech parametrů ze senzoru BME280 s výpisem do sériového 
@@ -73,15 +72,16 @@ void loop() {
 
   delay(1000); // čeká 1 sekundu
 }
-</pre>
 
-<pre style="background-color: #f2f2f2;">
+
+
 //**********************************************
 //Prompt:
 //Prosím tě, napiš mi program pro ESP32-C3 v arduino ide 2.0, pro komunikaci po wi-fi s notebookem ve stejné síti. 
 //Rád bych, aby jsem v sériovém monitoru viděl postupně jednotlivé fáze připojování. Místo skutečného SSID a hesla 
 //v programu napiš jen your_SSID a your_PSWD.
 //**********************************************
+/*
 #include <WiFi.h> // přidává knihovnu pro práci s Wi-Fi
 
 const char* ssid = "Zima24_guest"; // nastaví jméno Wi-Fi sítě
@@ -111,4 +111,27 @@ void setup() {
 void loop() {
   // your code here
 }
-</pre>
+*/
+
+
+
+//**********************************************
+//Hallo word
+//**********************************************
+/*
+void setup()
+{
+    Serial.begin(57600);
+}
+
+void loop()
+{
+    int counter = 0;
+    while (1)
+    {
+        Serial.print("Hodnota promenne je: ");
+        Serial.println(counter++);
+        delay(500);
+    }
+}
+*/
