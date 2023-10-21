@@ -5,7 +5,7 @@
 
 <p>Program vytvářen pomocí Chat-GPT4 v prohlížeči MS Edge</p>
 
-<pre style="background-color: #f2f2f2;">
+<pre style="background-color: #555555;">
 //**********************************************
 //Prompt:
 //Proč je po řádku Serial.begin(115200); zpoždění jedna sekunda?
@@ -17,7 +17,7 @@
 //sekundy je zde pravděpodobně zvykem autora kódu.
 </pre>
 
-<pre style="background-color: #f2f2f2;">
+<pre style="background-color: #555555;">
 //**********************************************
 //Prompt:
 //Můžeš mi, prosím, do předešlého programu doplnit čtení všech parametrů ze senzoru BME280 s výpisem 
@@ -82,7 +82,7 @@ void loop() {
 }
 </pre>
 
-<pre style="background-color: #f2f2f2;">
+<pre style="background-color: #555555;">
 //**********************************************
 //Prompt:
 //Prosím tě, napiš mi program pro ESP32-C3 v arduino ide 2.0, pro komunikaci po wi-fi s notebookem 
