@@ -7,7 +7,7 @@ Brainstorming
 - https://grafana.com/
 - další senzory
 - zobrazení hodnot na webových stránkách
-*/
+*/ 
 
 
 
