@@ -6,95 +6,90 @@
 // Stahovat data z TMEP.cz
 
 #include "M5CoreInk.h"
-// Knihovny k senzoru ENV II
+// Knihovny k senzoru ENV III
 #include "M5_ENV.h"
-#include <Adafruit_BMP280.h>
-#include "Adafruit_Sensor.h"
-#include "SHT85.h" //Problem s SHT30, resetovalo MCU, vzresen jinou knihovnou
+//#include <Adafruit_BMP280.h>
+//#include "Adafruit_Sensor.h"
+//#include "SHT85.h" //Problem s SHT30, resetovalo MCU, vzresen jinou knihovnou
 // Knihovny k Wi-fi
 #include <WiFi.h>
 
 #define SHT30_ADDRESS 0x44
+#define QMP6988_ADDRESS 0x56
 
 // Vytvoření instance | Instance creation
 Ink_Sprite InkPageSprite(&M5.M5Ink);
-Adafruit_BMP280 bme;
-//SHT3X sht30;
-SHT85 sht30;
+SHT3X sht30;
+QMP6988 qmp6988;
 
 // Merene veliciny
-float pressBMP = 0.0;
-float tempBMP = 23.6;
-float tempSHT = 18.3;
-float humSHT = 0.0;
+float tempSHT = 20.2;
+float humSHT = 50.5;
+float tempQMP = 11.1;
+float pressQMP = 100.0;
 
 void setup() {
   // Initialize CoreInk
-  M5.begin(); 
+  M5.begin();
   Serial.begin(115200);
-  if (!M5.M5Ink.isInit())
-  { // check if the initialization is successful.
+  if (!M5.M5Ink.isInit()) {  // check if the initialization is successful.
     Serial.printf("Ink Init faild");
   }
-  M5.M5Ink.clear(); // Clear the screen.
+  M5.M5Ink.clear();  // Clear the screen.
   delay(1000);
   // creat ink Sprite.
-  if (InkPageSprite.creatSprite(0, 0, 200, 200, true) != 0)
-  {
+  if (InkPageSprite.creatSprite(0, 0, 200, 200, true) != 0) {
     Serial.printf("Ink Sprite creat faild");
   }
-
-  sht30.begin(SHT30_ADDRESS);
-
   // Test displeje
   InkPageSprite.drawString(20, 20, "Hello Core-INK");
   InkPageSprite.pushSprite();
   delay(2000);
-  M5.M5Ink.clear(); // Clear the screen.
+  M5.M5Ink.clear();  // Clear the screen.
+
+  Wire.begin(25, 26); // Wire init, adding the I2C bus.
+//  qmp6988.init();
+//  sht30.init();
+  qmp6988.init(QMP6988_ADDRESS);
+  sht30.init(SHT30_ADDRESS);
 }
 
 
 
 void loop() {
-  //Cteni hodnot
-  while (!bme.begin(0x76))   //ENVII má adresu 0x76
-  { // Init the sensor of bme
-    InkPageSprite.drawString(20, 20, "Could not find");
-    InkPageSprite.drawString(20, 40, "a valid BMP280");
-    InkPageSprite.pushSprite();
+ 
+  // Cteni hodnot
+  pressQMP = qmp6988.calcPressure();
+  tempQMP = qmp6988.calcTemperature();
+  //  sht30.get();                   // Obtain the data of shT30.
+  //  sht30.read();
+  if (sht30.get() == 0) {
+    tempSHT = sht30.cTemp;
+    humSHT = sht30.humidity;
   }
-  pressBMP = bme.readPressure(); // Stores the pressure gained by BMP.
-  tempBMP = bme.readTemperature(); 
 
-//  sht30.get();                   // Obtain the data of shT30.
-  sht30.read();
-  tempSHT = sht30.getTemperature();
-  humSHT = sht30.getHumidity();
-           //  tempSHT = sht30.cTemp;             // Store the temperature obtained from shT30.
-           //  humSHT = sht30.humidity;
-
-           // Vypis na seriove lince
-           Serial.println("   VNITRNI MERENI");
-  Serial.print("BMP pressure: ");
-  Serial.println(pressBMP);
-  Serial.print("BMP temperature: ");
-  Serial.println(tempBMP);
+  // Vypis na seriove lince
+  Serial.println("   VNITRNI MERENI");
+  Serial.print("QMP pressure: ");
+  Serial.println(pressQMP);
+  Serial.print("QMP temperature: ");
+  Serial.println(tempQMP);
   Serial.print("SHT temperature: ");
   Serial.println(tempSHT);
   Serial.print("SHT humidity: ");
   Serial.println(humSHT);
-
+ 
   //Vypis na displeji
   InkPageSprite.drawString(5, 5, "VNITRNI MERENI");
 
-  char sPressBMP[10];
-  dtostrf(pressBMP, 2, 2, sPressBMP);
-  InkPageSprite.drawString(5, 30, "BMP280 pres.: ");
-  InkPageSprite.drawString(130, 30, sPressBMP);
-  char sTempBMP[10];
-  dtostrf(tempBMP, 2, 2, sTempBMP);
-  InkPageSprite.drawString(5, 50, "BMP280 temper.: ");
-  InkPageSprite.drawString(153, 50, sTempBMP);
+  char sPressQMP[10];
+  dtostrf(pressQMP, 2, 2, sPressQMP);
+  InkPageSprite.drawString(5, 30, "QMP6988 pres.: ");
+  InkPageSprite.drawString(130, 30, sPressQMP);
+  char sTempQMP[10];
+  dtostrf(tempQMP, 2, 2, sTempQMP);
+  InkPageSprite.drawString(5, 50, "QMP6988 temper.: ");
+  InkPageSprite.drawString(153, 50, sTempQMP);
   char sTempSHT[10];
   dtostrf(tempSHT, 2, 2, sTempSHT);
   InkPageSprite.drawString(5, 70, "SHT30 temper.: ");
@@ -121,7 +116,7 @@ void loop() {
       M5.shutdown(); // Turn off the power, restart it, you need to wake up through the PWR button.  关闭电源,再次启动需要通过PWR按键唤醒
     }
   */
-  M5.update(); // Refresh device button.
+  M5.update();  // Refresh device button.
   delay(10000);
 }
 
