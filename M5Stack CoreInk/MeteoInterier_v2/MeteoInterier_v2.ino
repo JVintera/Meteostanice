@@ -44,11 +44,19 @@ const char *password = 0;
 #define ADC_PIN 35
 #define ADC_TO_VOLT 0.0049645  // max z ADC 843 = 4,19V, delic napeti z akumulatoru 20kOhm + 5,1kOhm
 
+// Konstanty pro výpočet doby spánku - deep sleep
+// podle https://www.itnetwork.cz/hardware-pc/arduino/esp32/mod-hlubokeho-spanku-na-modulu-esp-32
+#define uS_NA_S    1000000
+#define uS_NA_MIN 60000000
+#define DELKA_SPANKU 5
+RTC_DATA_ATTR int pocetBootovani = 0;
+
+// Adresy zařízení na I2C
 #define SHT30_ADDRESS 0x44
 #define QMP6988_ADDRESS 0x56
 
-// Vytvoření instance | Instance creation
-Ink_Sprite InkPageSprite(&M5.M5Ink);
+                // Vytvoření instance | Instance creation
+                Ink_Sprite InkPageSprite(&M5.M5Ink);
 SHT3X sht30;
 QMP6988 qmp6988;
 
@@ -130,6 +138,12 @@ void setup() {
   Serial.println();
   Serial.print("Pripojeno do site, IP adresa zarizeni: ");
   Serial.println(WiFi.localIP());
+
+  // Zdroj www.itnetwork.cz/hardware-pc/arduino/esp32/mod-hlubokeho-spanku-na-modulu-esp-32
+  ++pocetBootovani;
+  Serial.println("Boot cycles: " + String(pocetBootovani));
+  vypisZdrojProbuzeni();
+  esp_sleep_enable_timer_wakeup(DELKA_SPANKU * uS_NA_S);  // Nastavení časovače RTC
 }
 
 void loop() {
@@ -153,12 +167,15 @@ void loop() {
     humSHT = sht30.humidity;
   }
   batVoltage = analogRead(ADC_PIN) * ADC_TO_VOLT;
+  long rssi = WiFi.RSSI();  // Měření síly signálu wi-fi
 
   // Odeslání dat na TMEP.cz
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
     // GUID pro teplotu "teplota", pro vlhkost "vlhkost", ...
-    String serverPath = serverName + "temperature=" + tempSHT + "&humidity=" + humSHT + "&voltage=" + batVoltage;
+    // Více viz https://wiki.tmep.cz/doku.php?id=zarizeni:vlastni_hardware
+    // String serverPath = serverName + "temperature=" + tempSHT + "&humidity=" + humSHT + "&pressure=" + pressQMP + "&v=" + batVoltage + "&rssi=" + rssi;
+    String serverPath = serverName + "temperature=" + tempSHT + "&humidity=" + humSHT + "&pressure=" + batVoltage + "&v=" + batVoltage + "&rssi=" + rssi;
     // zacatek http spojeni
     http.begin(serverPath.c_str());
 
@@ -258,14 +275,12 @@ void loop() {
   // M5.M5Ink.deepSleep();
   //
 
-  /* USPANI ZARIZENI  */
-  //esp_sleep_enable_timer_wakeup(300 * 1000000); // Zarizeni se uspi na 5min
-  //esp_deep_sleep_start();                       // Spusteni uspani
-
-
-
-
+  // Uspání MCU
+  Serial.println("Aktivuji mod hlubokeho spanku...");
   delay(1000);
+  Serial.flush();
+  esp_deep_sleep_start(); // Spusteni uspani
+  Serial.println("Testovaci zprava, nikdy se nevypisu");
 }
 
 // Vypíše text na displeji po stisknutí tlačítka
@@ -274,4 +289,32 @@ void messageToInk(char *str) {
   InkPageSprite.drawString(35, 59, str);  // draw the string.
   InkPageSprite.pushSprite();             // push the sprite.
   delay(2000);
+}
+
+// Funkce, která vypíše zdroje probuzení
+// podle https://www.itnetwork.cz/hardware-pc/arduino/esp32/mod-hlubokeho-spanku-na-modulu-esp-32
+void vypisZdrojProbuzeni()
+{
+  esp_sleep_wakeup_cause_t zdrojProbuzeni;
+
+  zdrojProbuzeni = esp_sleep_get_wakeup_cause();
+
+  switch (zdrojProbuzeni)
+  {
+  case ESP_SLEEP_WAKEUP_EXT0:
+    Serial.println("Cip probuzen externim signalem - RTC_IO");
+    break;
+  case ESP_SLEEP_WAKEUP_EXT1:
+    Serial.println("Cip probuzen externim signalem - RTC_CNTL");
+    break;
+  case ESP_SLEEP_WAKEUP_TIMER:
+    Serial.println("Cip probuzen casovacem");
+    break;
+  case ESP_SLEEP_WAKEUP_TOUCHPAD:
+    Serial.println("Cip probuzen dotykovym senzorem");
+    break;
+  default:
+    Serial.printf("Jiny zdroj probuzeni: %d\n", zdrojProbuzeni);
+    break;
+  }
 }
