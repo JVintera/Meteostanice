@@ -21,6 +21,9 @@ https://chiptron.cz/articles.php?article_id=318
 #include "M5CoreInk.h"
 // Knihovny k senzoru ENV III
 #include "M5_ENV.h"
+// Knihovna pro trvalé ukládání dat
+// https : // randomnerdtutorials.com/esp32-save-data-permanently-preferences/
+#include <Preferences.h>
 // Knihovny k Wi-fi
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -46,23 +49,26 @@ const char *password = 0;
 
 // Konstanty pro výpočet doby spánku - deep sleep
 // podle https://www.itnetwork.cz/hardware-pc/arduino/esp32/mod-hlubokeho-spanku-na-modulu-esp-32
-#define uS_NA_S    1000000
+#define uS_NA_S 1000000
 #define uS_NA_MIN 60000000
 #define DELKA_SPANKU 5
-RTC_DATA_ATTR int pocetBootovani = 0;
+RTC_DATA_ATTR int countOfBoot = 0;
 
 // Adresy zařízení na I2C
 #define SHT30_ADDRESS 0x44
 #define QMP6988_ADDRESS 0x56
 
-                // Vytvoření instance | Instance creation
-                Ink_Sprite InkPageSprite(&M5.M5Ink);
+// Vytvoření instance | Instance creation
+Ink_Sprite InkPageSprite(&M5.M5Ink);
 SHT3X sht30;
 QMP6988 qmp6988;
+Preferences preferences;
 
 void setup() {
   // Initialize CoreInk
   M5.begin();
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);  // LED svítí
   Serial.begin(115200);
   if (!M5.M5Ink.isInit()) {  // check if the initialization is successful.
     Serial.printf("Ink Init faild");
@@ -74,26 +80,26 @@ void setup() {
     Serial.printf("Ink Sprite creat faild");
   }
   // Test displeje
-  InkPageSprite.drawString(20, 20, "Hello Core-INK");
-  InkPageSprite.pushSprite();
-  delay(2000);
-  M5.M5Ink.clear();  // Clear the screen.
+  //InkPageSprite.drawString(20, 20, "Hello Core-INK");
+  //InkPageSprite.pushSprite();
+  //delay(2000);
+  //M5.M5Ink.clear();  // Clear the screen.
 
   Wire.begin(25, 26);  // Wire init, adding the I2C bus.
   qmp6988.init(QMP6988_ADDRESS);
   sht30.init(SHT30_ADDRESS);
 
-  pinMode(LED_PIN, OUTPUT);
-
   // Připojení k Wi-fi
-  while (ssid == 0 || password == 0) {  // Výběr Wi-fi
-    messageToInk("Vyberte Wi-FI...");   // Scroll wheel up.
-    Serial.println("Vyberte Wi-FI, nebo vypněte MCU");
-    if (M5.BtnUP.wasPressed()) {
-      messageToInk("Wi-FI 1");  // Scroll wheel up.
-      Serial.println("Wi-FI 1");
-      ssid = SSID_1;
-      password = PSWRD_1;
+  /*  while (ssid == 0 || password == 0) {  // Výběr Wi-fi
+      messageToInk("Vyberte Wi-FI...");   // Scroll wheel up.
+      Serial.println("Vyberte Wi-FI, nebo vypněte MCU");
+      if (M5.BtnUP.wasPressed()) {
+  */
+  messageToInk("Wi-FI 1");  // Scroll wheel up.
+  Serial.println("Wi-FI 1");
+  ssid = SSID_1;
+  password = PSWRD_1;
+  /*
     }
     if (M5.BtnDOWN.wasPressed()) {
       messageToInk("Wi-FI 2");  // Scroll wheel up.
@@ -119,6 +125,7 @@ void setup() {
     M5.update();
   }
   delay(2000);
+    */
 
   int pokus = 0;
   WiFi.begin(ssid, password);
@@ -129,8 +136,7 @@ void setup() {
     Serial.print(".");
     if (pokus > 20)  // Pokud se behem 10s nepripoji, uspi se na 300s = 5min
     {
-      esp_sleep_enable_timer_wakeup(300 * 1000000);
-      esp_deep_sleep_start();
+      deepSleepRTC();
     }
     pokus++;
   }
@@ -139,25 +145,12 @@ void setup() {
   Serial.print("Pripojeno do site, IP adresa zarizeni: ");
   Serial.println(WiFi.localIP());
 
-  // Zdroj www.itnetwork.cz/hardware-pc/arduino/esp32/mod-hlubokeho-spanku-na-modulu-esp-32
-  ++pocetBootovani;
-  Serial.println("Boot cycles: " + String(pocetBootovani));
-  vypisZdrojProbuzeni();
-  esp_sleep_enable_timer_wakeup(DELKA_SPANKU * uS_NA_S);  // Nastavení časovače RTC
-}
-
-void loop() {
   // Merene veliciny
   float tempSHT = 0.1;
   float humSHT = 0.1;
   float tempQMP = 0.1;
   float pressQMP = 0.1;
   float batVoltage = 0.1;
-
-  // Probliknutí zelené LED
-  digitalWrite(LED_PIN, LOW);
-  delay(200);
-  digitalWrite(LED_PIN, HIGH);
 
   // Cteni hodnot
   pressQMP = qmp6988.calcPressure();
@@ -270,17 +263,11 @@ void loop() {
     }
   */
 
+  deepSleepRTC();
+}
 
-
-  // M5.M5Ink.deepSleep();
-  //
-
-  // Uspání MCU
-  Serial.println("Aktivuji mod hlubokeho spanku...");
-  delay(1000);
-  Serial.flush();
-  esp_deep_sleep_start(); // Spusteni uspani
-  Serial.println("Testovaci zprava, nikdy se nevypisu");
+// Není potřeba, protože při probuzení z deep sleep se restartuje MCU
+void loop() {
 }
 
 // Vypíše text na displeji po stisknutí tlačítka
@@ -291,30 +278,49 @@ void messageToInk(char *str) {
   delay(2000);
 }
 
+// Funkce pro probuzení MCU z deep sleep pomocí tlačítka
+// podle https://www.itnetwork.cz/hardware-pc/arduino/esp32/mod-hlubokeho-spanku-na-modulu-esp-32
+// Seznam RTC_GPIO v datasheetu, např. pro ESP32 pico D4
+// https://www.espressif.com/sites/default/files/documentation/esp32-pico_series_datasheet_en.pdf
+void deepSleepRTC_GPIO() {
+
+}
+
+// Funkce pro uspání MCU a nastavení RTC pro probuzení
+// podle https://www.itnetwork.cz/hardware-pc/arduino/esp32/mod-hlubokeho-spanku-na-modulu-esp-32
+void deepSleepRTC() {
+  ++countOfBoot;  // Globální proměnná
+  Serial.println("Boot cycles: " + String(countOfBoot));
+  typeAwakenedFromDeepSleep();
+  esp_sleep_enable_timer_wakeup(DELKA_SPANKU * uS_NA_MIN);  // Nastavení časovače RTC
+  Serial.println("Aktivuji mod hlubokeho spanku...");
+  Serial.flush();          // Počká, až se odešlou všechna data po sériové lince, pak program pokračuje dál
+  esp_deep_sleep_start();  // Spusteni uspani
+  Serial.println("Testovaci zprava, nikdy se nevypisu");
+}
+
 // Funkce, která vypíše zdroje probuzení
 // podle https://www.itnetwork.cz/hardware-pc/arduino/esp32/mod-hlubokeho-spanku-na-modulu-esp-32
-void vypisZdrojProbuzeni()
-{
+void typeAwakenedFromDeepSleep() {
   esp_sleep_wakeup_cause_t zdrojProbuzeni;
 
   zdrojProbuzeni = esp_sleep_get_wakeup_cause();
 
-  switch (zdrojProbuzeni)
-  {
-  case ESP_SLEEP_WAKEUP_EXT0:
-    Serial.println("Cip probuzen externim signalem - RTC_IO");
-    break;
-  case ESP_SLEEP_WAKEUP_EXT1:
-    Serial.println("Cip probuzen externim signalem - RTC_CNTL");
-    break;
-  case ESP_SLEEP_WAKEUP_TIMER:
-    Serial.println("Cip probuzen casovacem");
-    break;
-  case ESP_SLEEP_WAKEUP_TOUCHPAD:
-    Serial.println("Cip probuzen dotykovym senzorem");
-    break;
-  default:
-    Serial.printf("Jiny zdroj probuzeni: %d\n", zdrojProbuzeni);
-    break;
+  switch (zdrojProbuzeni) {
+    case ESP_SLEEP_WAKEUP_EXT0:
+      Serial.println("Cip probuzen externim signalem - RTC_IO");
+      break;
+    case ESP_SLEEP_WAKEUP_EXT1:
+      Serial.println("Cip probuzen externim signalem - RTC_CNTL");
+      break;
+    case ESP_SLEEP_WAKEUP_TIMER:
+      Serial.println("Cip probuzen casovacem");
+      break;
+    case ESP_SLEEP_WAKEUP_TOUCHPAD:
+      Serial.println("Cip probuzen dotykovym senzorem");
+      break;
+    default:
+      Serial.printf("Jiny zdroj probuzeni: %d\n", zdrojProbuzeni);
+      break;
   }
 }
