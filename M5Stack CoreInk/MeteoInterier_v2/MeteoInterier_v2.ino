@@ -1,5 +1,5 @@
 // x   Stav baterie zobrazit
-// Při deep sleep se vypíná baterie
+// x   Při deep sleep se vypíná baterie
 // Signalizovat nizky stav baterie blikanim LED
 // x   Dodelat wifi
 // x   komunikaci s tmep.cz
@@ -44,8 +44,6 @@ DO něj vložte následující kod:
 String serverName = "http://domena_vaseho_cidla.tmep.cz/index.php?";
 A nahradte text v uvozovkach svymi prihlasovacimi udaji
 */
-const char *ssid = 0;
-const char *password = 0;
 
 #define LED_PIN 10
 #define ADC_PIN 35
@@ -93,102 +91,107 @@ void setup() {
   sht30.init(SHT30_ADDRESS);
 
 
-
-  preferences.begin("my-app", false);  //název datového prostoru, false = read/write mode
-
-
+  // Uložení přihlašovacích údajů k Wi-fi do FLASH paměti
+  messageToInk("Vyberte Wi-FI...");        // Scroll wheel up.
+  Serial.println("Vyberte Wi-FI, nebo vypněte MCU");
+  if (M5.BtnPWR.isPressed())
+  {
+    if (M5.BtnUP.isPressed())
+    {
+      messageToInk("Wi-FI 1"); // Scroll wheel up.
+      Serial.println("Wi-FI 1");
+      preferences.begin("credentials", false); // název datového prostoru, false = read/write mode
+      preferences.putString("ssid", SSID_1);
+      preferences.putString("password", PSWRD_1);
+      preferences.end();
+    }
+    if (M5.BtnDOWN.isPressed())
+    {
+      messageToInk("Wi-FI 2"); // Scroll wheel up.
+      Serial.println("Wi-FI 2");
+      preferences.begin("credentials", false); // název datového prostoru, false = read/write mode
+      preferences.putString("ssid", SSID_2);
+      preferences.putString("password", PSWRD_2);
+      preferences.end();
+    }
+  }
 
   // Připojení k Wi-fi
-  /*  while (ssid == 0 || password == 0) {  // Výběr Wi-fi
-      messageToInk("Vyberte Wi-FI...");   // Scroll wheel up.
-      Serial.println("Vyberte Wi-FI, nebo vypněte MCU");
-      if (M5.BtnUP.wasPressed()) {
-  */
-  messageToInk("Wi-FI 1");  // Scroll wheel up.
-  Serial.println("Wi-FI 1");
-  ssid = SSID_1;
-  password = PSWRD_1;
-  /*
-    }
-    if (M5.BtnDOWN.wasPressed()) {
-      messageToInk("Wi-FI 2");  // Scroll wheel up.
-      Serial.println("Wi-FI 2");
-      ssid = SSID_2;
-      password = PSWRD_2;
-    }
-    //if (M5.BtnMID.wasPressed())
-    //  messageToInk("Btn MID Pressed"); // Dial down.
-    // if (M5.BtnEXT.wasPressed())
-    //   messageToInk("Btn EXT Pressed"); // Top button press.
-    if (M5.BtnPWR.wasPressed()) {  // Right button press - Vypnutí M5CoreInk
-      messageToInk("VYPINAM");
-      Serial.println("VYPÍNÁM");
-      for (byte i = 0; i < 5; i++) {
-        digitalWrite(LED_PIN, LOW);
-        delay(500);
-        digitalWrite(LED_PIN, HIGH);
-        delay(500);
-      }
-      M5.shutdown();  // Turn off the power, restart it, you need to wake up through the PWR button.
-    }
-    M5.update();
-  }
-  delay(2000);
-    */
-
   int pokus = 0;
+  preferences.begin("credentials", false); // název datového prostoru, false = read/write mode
+  String ssid = preferences.getString("ssid", "");
+  String password = preferences.getString("password", "");
+  preferences.end();
+  if (ssid == NULL || password == NULL) {
+    Serial.print("Není zadané SSID a/nebo heslo.");
+    messageToInk("Neni SSID a heslo");
+    // Zde se použije DEEP SLEEP od RLC k resetu MCU
+    // Pokud po nahrání programu DEEP SLEEP nefunguje, nejprve je dobré restartovat MCU
+    // deepSleepRTC();  // Deep sleep pro klasické ESP32
+    M5.shutdown(1); // Deep sleep pro M5CoreInk, čas v sekundách
+  }
+  Serial.print("Načtené SSID z FLASH: ");
+  Serial.println(ssid);
+  Serial.print("Načtené heslo z FLASH: ");
+  Serial.println(password);
   WiFi.begin(ssid, password);
   Serial.println("Pripojovani");
   messageToInk("Pripojovani");
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print(".");
-    if (pokus > 20)  // Pokud se behem 10s nepripoji, uspi se na 300s = 5min
+    if (pokus > 20) // Pokud se behem 10s nepripoji, uspi se na 300s = 5min
     {
-      deepSleepRTC();
+      // Pokud po nahrání programu DEEP SLEEP nefunguje, nejprve je dobré restartovat MCU
+      // deepSleepRTC();  // Deep sleep pro klasické ESP32
+      M5.shutdown(300); // Deep sleep pro M5CoreInk, čas v sekundách
     }
     pokus++;
   }
 
-  Serial.println();
-  Serial.print("Pripojeno do site, IP adresa zarizeni: ");
-  Serial.println(WiFi.localIP());
+    Serial.println();
+    Serial.print("Pripojeno do site, IP adresa zarizeni: ");
+    Serial.println(WiFi.localIP());
 
-  // Merene veliciny
-  float tempSHT = 0.1;
-  float humSHT = 0.1;
-  float tempQMP = 0.1;
-  float pressQMP = 0.1;
-  float batVoltage = 0.1;
+    // Merene veliciny
+    float tempSHT = 0.1;
+    float humSHT = 0.1;
+    float tempQMP = 0.1;
+    float pressQMP = 0.1;
+    float batVoltage = 0.1;
 
-  // Cteni hodnot
-  pressQMP = qmp6988.calcPressure() / 100; // Převod na hPa
-  tempQMP = qmp6988.calcTemperature();
-  if (sht30.get() == 0) {
-    tempSHT = sht30.cTemp;
-    humSHT = sht30.humidity;
-  }
-  batVoltage = analogRead(ADC_PIN) * ADC_TO_VOLT;
-  long rssi = WiFi.RSSI();  // Měření síly signálu wi-fi
+    // Cteni hodnot
+    pressQMP = ((qmp6988.calcPressure()) / 100); // Převod na hPa
+    tempQMP = qmp6988.calcTemperature();
+    if (sht30.get() == 0)
+    {
+      tempSHT = sht30.cTemp;
+      humSHT = sht30.humidity;
+    }
+    batVoltage = analogRead(ADC_PIN) * ADC_TO_VOLT;
+    long rssi = WiFi.RSSI(); // Měření síly signálu wi-fi
 
-  // Odeslání dat na TMEP.cz
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    // GUID pro teplotu "teplota", pro vlhkost "vlhkost", ...
-    // Více viz https://wiki.tmep.cz/doku.php?id=zarizeni:vlastni_hardware
-    String serverPath = serverName + "temperature=" + tempSHT + "&humidity=" + humSHT + "&pressure=" + pressQMP + "&v=" + batVoltage + "&rssi=" + rssi;
-    // zacatek http spojeni
-    http.begin(serverPath.c_str());
+    // Odeslání dat na TMEP.cz
+    if (WiFi.status() == WL_CONNECTED)
+    {
+      HTTPClient http;
+      // GUID pro teplotu "teplota", pro vlhkost "vlhkost", ...
+      // Více viz https://wiki.tmep.cz/doku.php?id=zarizeni:vlastni_hardware
+      String serverPath = serverName + "temperature=" + tempSHT + "&humidity=" + humSHT + "&pressure=" + pressQMP + "&v=" + batVoltage + "&rssi=" + rssi;
+      // zacatek http spojeni
+      http.begin(serverPath.c_str());
 
-    // http get request
-    int httpResponseCode = http.GET();
+      // http get request
+      int httpResponseCode = http.GET();
 
-    if (httpResponseCode > 0) {
-      Serial.print("HTTP Response code: ");
-      Serial.println(httpResponseCode);
-      String payload = http.getString();
-      Serial.println(payload);
-    } else {
+      if (httpResponseCode > 0)
+      {
+        Serial.print("HTTP Response code: ");
+        Serial.println(httpResponseCode);
+        String payload = http.getString();
+        Serial.println(payload);
+      } else {
       Serial.print("Error code: ");
       Serial.println(httpResponseCode);
     }
@@ -274,9 +277,7 @@ void setup() {
           M5.shutdown(); // Turn off the power, restart it, you need to wake up through the PWR button.
         }
       */
-
-
-}
+  }
 
 // Není potřeba, protože při probuzení z deep sleep se restartuje MCU
 void loop() {
