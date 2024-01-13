@@ -1,4 +1,5 @@
 // x   Stav baterie zobrazit
+// Při deep sleep se vypíná baterie
 // Signalizovat nizky stav baterie blikanim LED
 // x   Dodelat wifi
 // x   komunikaci s tmep.cz
@@ -16,13 +17,16 @@ https://wiki.tmep.cz/doku.php?id=portal:nastaveni_cidla
 Příklady
 https://blog.laskakit.cz/jednoducha-vizualizace-dat-na-tmep-cz-s-esp32-lpkit-a-cidlem-co2-teploty-vlhkosti-scd41-kompletni-navod/
 https://chiptron.cz/articles.php?article_id=318
+DEEP SLEEP režim
+https://www.itnetwork.cz/hardware-pc/arduino/esp32/mod-hlubokeho-spanku-na-modulu-esp-32
+Ukládání dat do FLASH
+https://randomnerdtutorials.com/esp32-save-data-permanently-preferences/
 */
 
 #include "M5CoreInk.h"
 // Knihovny k senzoru ENV III
 #include "M5_ENV.h"
-// Knihovna pro trvalé ukládání dat
-// https : // randomnerdtutorials.com/esp32-save-data-permanently-preferences/
+// Knihovna pro trvalé ukládání dat do FLASH
 #include <Preferences.h>
 // Knihovny k Wi-fi
 #include <WiFi.h>
@@ -48,7 +52,6 @@ const char *password = 0;
 #define ADC_TO_VOLT 0.0049645  // max z ADC 843 = 4,19V, delic napeti z akumulatoru 20kOhm + 5,1kOhm
 
 // Konstanty pro výpočet doby spánku - deep sleep
-// podle https://www.itnetwork.cz/hardware-pc/arduino/esp32/mod-hlubokeho-spanku-na-modulu-esp-32
 #define uS_NA_S 1000000
 #define uS_NA_MIN 60000000
 #define DELKA_SPANKU 5
@@ -88,6 +91,12 @@ void setup() {
   Wire.begin(25, 26);  // Wire init, adding the I2C bus.
   qmp6988.init(QMP6988_ADDRESS);
   sht30.init(SHT30_ADDRESS);
+
+
+
+  preferences.begin("my-app", false);  //název datového prostoru, false = read/write mode
+
+
 
   // Připojení k Wi-fi
   /*  while (ssid == 0 || password == 0) {  // Výběr Wi-fi
@@ -153,7 +162,7 @@ void setup() {
   float batVoltage = 0.1;
 
   // Cteni hodnot
-  pressQMP = qmp6988.calcPressure();
+  pressQMP = qmp6988.calcPressure() / 100; // Převod na hPa
   tempQMP = qmp6988.calcTemperature();
   if (sht30.get() == 0) {
     tempSHT = sht30.cTemp;
@@ -167,8 +176,7 @@ void setup() {
     HTTPClient http;
     // GUID pro teplotu "teplota", pro vlhkost "vlhkost", ...
     // Více viz https://wiki.tmep.cz/doku.php?id=zarizeni:vlastni_hardware
-    // String serverPath = serverName + "temperature=" + tempSHT + "&humidity=" + humSHT + "&pressure=" + pressQMP + "&v=" + batVoltage + "&rssi=" + rssi;
-    String serverPath = serverName + "temperature=" + tempSHT + "&humidity=" + humSHT + "&pressure=" + batVoltage + "&v=" + batVoltage + "&rssi=" + rssi;
+    String serverPath = serverName + "temperature=" + tempSHT + "&humidity=" + humSHT + "&pressure=" + pressQMP + "&v=" + batVoltage + "&rssi=" + rssi;
     // zacatek http spojeni
     http.begin(serverPath.c_str());
 
@@ -193,7 +201,7 @@ void setup() {
   // Vypis na seriove lince
   Serial.println("\n*** VNITRNI MERENI ***");
   Serial.print("QMP pressure: ");
-  Serial.print(pressQMP / 100);
+  Serial.print(pressQMP);
   Serial.println(" hPa");
   Serial.print("QMP temperature: ");
   Serial.print(tempQMP);
@@ -216,7 +224,7 @@ void setup() {
   char sPressQMP[10];
   dtostrf(pressQMP, 2, 2, sPressQMP);
   InkPageSprite.drawString(5, 30, "QMP6988 P: ");
-  InkPageSprite.drawString(95, 30, sPressQMP);
+  InkPageSprite.drawString(109, 30, sPressQMP);
   InkPageSprite.drawString(170, 30, "hPa");
 
   char sTempQMP[10];
@@ -244,26 +252,30 @@ void setup() {
   InkPageSprite.drawString(182, 110, "V");
 
   InkPageSprite.pushSprite();
-  M5.update();  // Refresh device button.
+  M5.update(); // Refresh device button.
 
-  /*
-  // ***** TLACITKA *****
-    if (M5.BtnUP.wasPressed())
-      messageToInk("Btn UP Pressed"); // Scroll wheel up.
-    if (M5.BtnDOWN.wasPressed())
-      messageToInk("Btn DOWN Pressed"); // Trackwheel scroll down.
-    if (M5.BtnMID.wasPressed())
-      messageToInk("Btn MID Pressed"); // Dial down. 
-    if (M5.BtnEXT.wasPressed())
-      messageToInk("Btn EXT Pressed"); // Top button press.
-    if (M5.BtnPWR.wasPressed())
-    { // Right button press.
-      messageToInk("Btn PWR Pressed");
-      M5.shutdown(); // Turn off the power, restart it, you need to wake up through the PWR button.
-    }
-  */
+  // Pokud po nahrání programu DEEP SLEEP nefunguje, nejprve je dobré restartovat MCU
+  // deepSleepRTC();  // Deep sleep pro klasické ESP32
+  M5.shutdown(300);  // Deep sleep pro M5CoreInk, čas v sekundách
 
-  deepSleepRTC();
+      /*
+      // ***** TLACITKA *****
+        if (M5.BtnUP.wasPressed())
+          messageToInk("Btn UP Pressed"); // Scroll wheel up.
+        if (M5.BtnDOWN.wasPressed())
+          messageToInk("Btn DOWN Pressed"); // Trackwheel scroll down.
+        if (M5.BtnMID.wasPressed())
+          messageToInk("Btn MID Pressed"); // Dial down.
+        if (M5.BtnEXT.wasPressed())
+          messageToInk("Btn EXT Pressed"); // Top button press.
+        if (M5.BtnPWR.wasPressed())
+        { // Right button press.
+          messageToInk("Btn PWR Pressed");
+          M5.shutdown(); // Turn off the power, restart it, you need to wake up through the PWR button.
+        }
+      */
+
+
 }
 
 // Není potřeba, protože při probuzení z deep sleep se restartuje MCU
