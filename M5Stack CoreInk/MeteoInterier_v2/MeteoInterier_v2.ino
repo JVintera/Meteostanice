@@ -1,3 +1,4 @@
+// DODĚLAT
 // x   Stav baterie zobrazit
 // x   Při deep sleep se vypíná baterie
 // Signalizovat nizky stav baterie blikanim LED
@@ -7,6 +8,11 @@
 // Stahovat data z TMEP.cz
 // Přepínání mezi dalšími měřeními: venku, místnosti
 // Nahradit http za https ???
+// Možná bude potřeba občas restartovat, viz:
+// - https://youtu.be/DLWacm16rQw?feature=shared
+// - https://github.com/ridercz/ESP-TMEP/blob/master/ESP-TMEP/ESP-TMEP.ino
+// - https://www.pieterverhees.nl/prototyping-builds/esp8266/130-difference-between-esp-reset-and-esp-restart
+
 
 /*
 // ***** POZOR!!! *****
@@ -263,6 +269,8 @@ void setup() {
 
   InkPageSprite.pushSprite();
   M5.update();  // Refresh device button.
+
+  ESP.reset
 
   // Pokud po nahrání programu DEEP SLEEP nefunguje, nejprve je dobré restartovat MCU
   // deepSleepRTC();  // Deep sleep pro klasické ESP32
