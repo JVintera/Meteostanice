@@ -37,7 +37,8 @@ https://randomnerdtutorials.com/esp32-save-data-permanently-preferences/
 
 #include "M5CoreInk.h"
 // Knihovny k senzoru ENV III
-#include "M5_ENV.h"
+//#include "M5_ENV.h" - stará
+#include "M5UnitENV.h"  //M5Unit-ENV by M5Stack v. 1.0.0
 // Knihovna pro trvalé ukládání dat do FLASH
 #include <Preferences.h>
 // Knihovny k Wi-fi
@@ -89,7 +90,7 @@ void setup() {
     Serial.printf("Ink Init faild");
   }
   M5.M5Ink.clear();  // Clear the screen.
-  delay(1000);
+  delay(100);        //Možná nutné pro smazaní displeje, původně 1000
   // creat ink Sprite.
   if (InkPageSprite.creatSprite(0, 0, 200, 200, true) != 0) {
     Serial.printf("Ink Sprite creat faild");
@@ -101,10 +102,6 @@ void setup() {
   delay(2000);
   M5.M5Ink.clear();  // Clear the screen.
   */
-
-  Wire.begin(25, 26);  // Wire init, adding the I2C bus.
-  qmp6988.init(QMP6988_ADDRESS);
-  sht30.init(SHT30_ADDRESS);
 
   // Uložení přihlašovacích údajů k Wi-fi do FLASH paměti
   if (M5.BtnPWR.isPressed()) {
@@ -126,95 +123,42 @@ void setup() {
     }
   }
 
-  // Připojení k Wi-fi
-  int pokus = 0;
-  preferences.begin("credentials", false);  // název datového prostoru, false = read/write mode
-  String ssid = preferences.getString("ssid", "");
-  String password = preferences.getString("password", "");
-  preferences.end();
-  if (ssid == NULL || password == NULL) {
-    Serial.print("Není zadané SSID a/nebo heslo.");
-    messageToInk("Neni SSID a/nebo heslo");
-    // Zde se použije DEEP SLEEP od RLC k resetu MCU
-    // Pokud po nahrání programu DEEP SLEEP nefunguje, nejprve je dobré restartovat MCU
-    // deepSleepRTC();  // Deep sleep pro klasické ESP32
-    M5.shutdown(1);  // Deep sleep pro M5CoreInk, čas v sekundách
-  }
-  // Ověření načtení wi-fi
-  /* 
-  Serial.print("Načtené SSID z FLASH: ");
-  Serial.println(ssid);
-  Serial.print("Načtené heslo z FLASH: ");
-  Serial.println(password);
-  */
-  WiFi.begin(ssid, password);
-  Serial.println("Pripojovani");
-  messageToInk("Pripojovani");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-    if (pokus > 20)  // Pokud se behem 10s nepripoji, uspi se na 300s = 5min
-    {
-      // Pokud po nahrání programu DEEP SLEEP nefunguje, nejprve je dobré restartovat MCU
-      // deepSleepRTC();  // Deep sleep pro klasické ESP32
-      M5.shutdown(300);  // Deep sleep pro M5CoreInk, čas v sekundách
-    }
-    pokus++;
+
+
+  if (!qmp6988.begin(&Wire, QMP6988_SLAVE_ADDRESS_L, 25, 26, 400000U))
+  {
+    Serial.println("Couldn't find QMP6988");
   }
 
-  //Ověření připojení do sítě a zobrazení IP Adresy
-  /*
-  Serial.println();
-  Serial.print("Pripojeno do site, IP adresa zarizeni: ");
-  Serial.println(WiFi.localIP());
-  */
+  if (!sht30.begin(&Wire, SHT3X_I2C_ADDR, 25, 26, 400000U))
+  {
+    Serial.println("Couldn't find SHT3X");
+  }
 
   // Merene veliciny
   float tempSHT = 0.1;
   float humSHT = 0.1;
   float tempQMP = 0.1;
   float pressQMP = 0.1;
-  float batVoltage = 0.1;
+  float altQMP = 0.1;
+  float batVoltage = analogRead(ADC_PIN) * ADC_TO_VOLT;
   long rssi = 0;
 
-  // Cteni hodnot
-  pressQMP = ((qmp6988.calcPressure()) / 100);  // S převodem na hPa
-  tempQMP = qmp6988.calcTemperature();
-  if (sht30.get() == 0) {
+  if (sht30.update()) {
+    // Uložení hodnot
     tempSHT = sht30.cTemp;
     humSHT = sht30.humidity;
   }
-  batVoltage = analogRead(ADC_PIN) * ADC_TO_VOLT;
-  rssi = WiFi.RSSI();  // Měření síly signálu wi-fi
 
-  // Odeslání dat na TMEP.cz
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    // GUID pro teplotu "teplota", pro vlhkost "vlhkost", ...
-    // Více viz https://wiki.tmep.cz/doku.php?id=zarizeni:vlastni_hardware
-    String serverPath = serverName + "temperature=" + tempSHT + "&humidity=" + humSHT + "&pressure=" + pressQMP + "&v=" + batVoltage + "&rssi=" + rssi;
-    // zacatek http spojeni
-    http.begin(serverPath.c_str());
-
-    // http get request
-    int httpResponseCode = http.GET();
-
-    if (httpResponseCode > 0) {
-      Serial.print("HTTP Response code: ");
-      Serial.println(httpResponseCode);
-      String payload = http.getString();
-      Serial.println(payload);
-    } else {
-      Serial.print("Error code: ");
-      Serial.println(httpResponseCode);
-    }
-    // Uvolneni
-    http.end();
-  } else {
-    Serial.println("Wi-Fi odpojeno");
+  if (qmp6988.update()) {
+    // Uložení hodnot
+    tempQMP = qmp6988.cTemp;
+    pressQMP = qmp6988.pressure;
+    altQMP = qmp6988.altitude;
   }
 
   // Vypis na seriove lince
+/*
   Serial.println("\n*** VNITRNI MERENI ***");
   Serial.print("QMP pressure: ");
   Serial.print(pressQMP);
@@ -228,12 +172,16 @@ void setup() {
   Serial.print("SHT humidity: ");
   Serial.print(humSHT);
   Serial.println(" %RH");
+  Serial.print("QMP approx altitude: ");
+  Serial.print(altQMP);
+  Serial.println(" m");
   Serial.print("Baterie voltage: ");
   Serial.print(batVoltage);
   Serial.println(" V");
   Serial.println("**********************\n");
+*/
 
-  //Vypis na displeji
+  // Vypis na displeji
   InkPageSprite.clear();
   InkPageSprite.drawString(5, 5, "VNITRNI MERENI");
 
@@ -268,13 +216,88 @@ void setup() {
   InkPageSprite.drawString(182, 110, "V");
 
   InkPageSprite.pushSprite();
+
   M5.update();  // Refresh device button.
 
-  ESP.reset
+
+  // Připojení k Wi-fi
+  int pokus = 0;
+  preferences.begin("credentials", false);  // název datového prostoru, false = read/write mode
+  String ssid = preferences.getString("ssid", "");
+  String password = preferences.getString("password", "");
+  preferences.end();
+  if (ssid == NULL || password == NULL) {
+    Serial.print("Není zadané SSID a/nebo heslo.");
+    messageToInk("Neni SSID a/nebo heslo");
+    // Zde se použije DEEP SLEEP od RLC k resetu MCU
+    // Pokud po nahrání programu DEEP SLEEP nefunguje, nejprve je dobré restartovat MCU
+    // deepSleepRTC();  // Deep sleep pro klasické ESP32
+    M5.shutdown(1);  // Deep sleep pro M5CoreInk, čas v sekundách
+  }
+  // Ověření načtení wi-fi
+  /*
+    Serial.print("Načtené SSID z FLASH: ");
+    Serial.println(ssid);
+    Serial.print("Načtené heslo z FLASH: ");
+    Serial.println(password);
+    */
+  WiFi.begin(ssid, password);
+  Serial.println("Pripojovani");
+  //messageToInk("Pripojovani");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+    if (pokus > 20)  // Pokud se behem 10s nepripoji, uspi se na 300s = 5min
+    {
+      // Pokud po nahrání programu DEEP SLEEP nefunguje, nejprve je dobré restartovat MCU
+      // deepSleepRTC();  // Deep sleep pro klasické ESP32
+      M5.shutdown(300);  // Deep sleep pro M5CoreInk, čas v sekundách
+    }
+    pokus++;
+  }
+
+  // Ověření připojení do sítě a zobrazení IP Adresy
+  /*
+    Serial.println();
+    Serial.print("Pripojeno do site, IP adresa zarizeni: ");
+    Serial.println(WiFi.localIP());
+    */
+  rssi = WiFi.RSSI();  // Měření síly signálu wi-fi
+
+
+  // Odeslání dat na TMEP.cz
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    // GUID pro teplotu "teplota", pro vlhkost "vlhkost", ...
+    // Více viz https://wiki.tmep.cz/doku.php?id=zarizeni:vlastni_hardware
+    String serverPath = serverName + "temperature=" + tempSHT + "&humidity=" + humSHT + "&pressure=" + pressQMP + "&v=" + batVoltage + "&rssi=" + rssi;
+    // zacatek http spojeni
+    http.begin(serverPath.c_str());
+
+    // http get request
+    int httpResponseCode = http.GET();
+
+    if (httpResponseCode > 0) {
+      Serial.print("HTTP Response code: ");
+      Serial.println(httpResponseCode);
+      String payload = http.getString();
+      Serial.println(payload);
+    } else {
+      Serial.print("Error code: ");
+      Serial.println(httpResponseCode);
+    }
+    // Uvolneni
+    http.end();
+  } else {
+    Serial.println("Wi-Fi odpojeno");
+  }
+
+
+
 
   // Pokud po nahrání programu DEEP SLEEP nefunguje, nejprve je dobré restartovat MCU
   // deepSleepRTC();  // Deep sleep pro klasické ESP32
-  M5.shutdown(300);  // Deep sleep pro M5CoreInk, čas v sekundách
+  M5.shutdown(600);  // Deep sleep pro M5CoreInk, čas v sekundách
 
   /*
       // ***** TLACITKA *****
@@ -304,7 +327,7 @@ void messageToInk(char *str) {
   InkPageSprite.clear();                  // clear the screen.
   InkPageSprite.drawString(35, 59, str);  // draw the string.
   InkPageSprite.pushSprite();             // push the sprite.
-  delay(2000);
+  //delay(2000);
 }
 
 /*
