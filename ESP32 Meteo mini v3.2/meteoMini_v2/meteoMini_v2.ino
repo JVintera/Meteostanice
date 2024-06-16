@@ -1,5 +1,23 @@
 /*
 --------------------------------------------------
+DESKA
+METEO mini v3.2
+--------------------------------------------------
+https://www.laskakit.cz/laskakit-meteo-mini/
+https://github.com/LaskaKit/Meteo_Mini
+Programování přes programátor (převodník USB na UART)
+https://www.laskakit.cz/laskakit-ch9102-programmer-usb-c--microusb--uart/
+https://www.laskakit.cz/prevodnik-6pin-microusb-ttl-uart--cp2102--dtr-pin/
+dříve https://www.laskakit.cz/laskakit-ch340-programmer-usb-c--microusb--uart/
+V Arduino IDE nastavit **ESP32C3 Dev Module**
+
+GPIO10 - DS18B20
+GPIO19 - SDA
+GPIO18 - SCL
+uŠup I2C - SDA GPIO19, SCL GPI18
+
+--------------------------------------------------
+DESKA
 ESP32-S3-DEVKit, ver1.0
 --------------------------------------------------
 https://www.laskakit.cz/laskakit-esp32-s3-devkit/
@@ -34,14 +52,9 @@ https://www.laskakit.cz/laskakit-bmp280-senzor-tlaku-a-teploty-vzduchu/
 
 MeteoLib meteoLib;
 
-//#include <SPI.h>
-//#include <Wire.h>
-//#include <WiFi.h>
-//#include <HTTPClient.h> //HttpClient by Adrian McEwen..., v2.2.0
-//#include <Adafruit_BME280.h> //Adafruit BME280 Library by Adafruit, v2.2.4
 
-//char ssid[] = SSID_1; //  your network SSID (name)
-//char pass[] = PSWRD_1;  // your network password
+char ssid[] = SSID_1; //  your network SSID (name)
+char pass[] = PSWRD_1;  // your network password
 
 //int status = WL_IDLE_STATUS; // the Wifi radio's status
 
