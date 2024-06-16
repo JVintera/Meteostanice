@@ -13,8 +13,12 @@ class MeteoLib {
     public:
         MeteoLib();
         void serialSetup(int baudRate = 115200);
+        void connectToWiFi(const char *ssid, const char *password);
+
     private:
         int _baudRate = 115200;
+        const char *_ssid;
+        const char *_password;
 };
 
 

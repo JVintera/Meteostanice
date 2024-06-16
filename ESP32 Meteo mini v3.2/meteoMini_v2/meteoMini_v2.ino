@@ -52,13 +52,8 @@ https://www.laskakit.cz/laskakit-bmp280-senzor-tlaku-a-teploty-vzduchu/
 
 MeteoLib meteoLib;
 
-
-char ssid[] = SSID_1; //  your network SSID (name)
-char pass[] = PSWRD_1;  // your network password
-
-//int status = WL_IDLE_STATUS; // the Wifi radio's status
-
-
+const char *ssid = SSID_1; //  your network SSID (name)
+const char *password = PSWRD_1; // your network password
 
 // LaskaKit microSD Card modul
 /*
@@ -83,6 +78,36 @@ SPIClass SPI2(HSPI);
 void setup()
 {
   meteoLib.serialSetup(); // Nastaví sériovou linku defaultně s rychlostí 115200 baud, a počká, dokus není komunikace funkční
+
+  meteoLib.connectToWiFi(ssid, password); // Připojí se k WiFi s danými údaji
+
+/*  int pokus = 0;
+  if (WiFi.status() != WL_NO_SHIELD)
+  {
+    WiFi.begin(ssid, password);
+    Serial.println(ssid);
+    Serial.println(password);
+
+    Serial.println("Pripojovani k Wifi");
+    while (WiFi.status() != WL_CONNECTED && pokus < 20)
+    {
+      delay(500);
+      Serial.print(".");
+      pokus++;
+    }
+    if (WiFi.status() == WL_CONNECTED)
+    {
+      Serial.println("Pripojeno k WiFi");
+    }
+    else
+    {
+      Serial.println("Nepodarilo se pripojit k WiFi");
+    }
+  }    
+  else
+    Serial.println("WiFi modul není připojený, nebo nefunguje. Zkontrolujte zapojení a napájení modulu.");
+*/
+
 }
 
 void loop()  //Není potřeba
