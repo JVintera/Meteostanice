@@ -15,6 +15,7 @@ class MeteoLib {
         MeteoLib();
         void serialSetup(int baudRate = 115200);
         void connectToWiFi(const char *ssid, const char *password);
+        void goToSleep(unsigned long sleepSec);
         void initBME280(uint8_t sda = 19, uint8_t scl = 18, uint8_t addr = 0x77);
         void readSensors(float &temperature, float &pressure, float &humidity);
         void sendDataToTMEP(float &temperature, float &pressure, float &humidity, String serverName);

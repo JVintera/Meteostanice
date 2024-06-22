@@ -22,8 +22,8 @@ void MeteoLib::connectToWiFi(const char *ssid, const char *password)
     if (WiFi.status() != WL_NO_SHIELD)
     {
         WiFi.begin(_ssid, _password);
-        Serial.println(_ssid);
-        Serial.println(_password);
+        //Serial.println(_ssid);
+        //Serial.println(_password);
 
         Serial.println("Pripojovani k Wifi");
         while (WiFi.status() != WL_CONNECTED && pokus < 20)
@@ -45,6 +45,14 @@ void MeteoLib::connectToWiFi(const char *ssid, const char *password)
     {
         Serial.println("WiFi modul není připojený, nebo nefunguje. Zkontrolujte zapojení a napájení modulu.");
     }
+}
+
+void MeteoLib::goToSleep(unsigned long sleepSec)
+{
+    //delay(1); // Zajištění, že všechny příkazy Serial byly odeslány
+    Serial.println("ESP in sleep mode");
+    esp_sleep_enable_timer_wakeup(sleepSec * 1000000); // Nastavení časovače pro probuzení
+    esp_deep_sleep_start();                            // Spuštění hlubokého spánku
 }
 
 void MeteoLib::initBME280(uint8_t sda, uint8_t scl, uint8_t addr)

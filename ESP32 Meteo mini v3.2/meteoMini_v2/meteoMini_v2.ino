@@ -40,6 +40,10 @@ https://learn.adafruit.com/adafruit-bme280-humidity-barometric-pressure-temperat
 Adresa pro I2C: 0x77 nebo 0x76
 Umí též SPI
 
+--------------------------------------------------
+LaskaKit BMP280 Senzor tlaku a teploty vzduchu
+--------------------------------------------------
+https://www.laskakit.cz/laskakit-bmp280-senzor-tlaku-a-teploty-vzduchu/
 
 --------------------------------------------------
 LaskaKit microSD Card modul (LaskaKit microSD Reader)
@@ -47,10 +51,7 @@ LaskaKit microSD Card modul (LaskaKit microSD Reader)
 https://www.laskakit.cz/laskakit-microsd-card-modul/
 https://github.com/LaskaKit/microSD-Reader/blob/main/README_CZ.md
 
---------------------------------------------------
-LaskaKit BMP280 Senzor tlaku a teploty vzduchu
---------------------------------------------------
-https://www.laskakit.cz/laskakit-bmp280-senzor-tlaku-a-teploty-vzduchu/
+
 
 
 
@@ -65,18 +66,17 @@ const char *ssid = SSID_1; //  your network SSID (name)
 const char *password = PSWRD_1; // your network password
 
 
-#define SLEEP_SEC 15 * 60   // Measurement interval (seconds)
+#define SLEEP_SEC 10 * 60   // Measurement interval (N x 60 seconds)
 
 #define SDA 19
 #define SCL 18
 #define BME280address 0x77 // (0x77) cut left and solder right pad on board
-//Adafruit_BME280 bme; //I2C
+
+// Přednastavená hodnota 10 je kvůli chybě se čtením dat z BME280
 float temperature = 10;
 float pressure = 10;
 float humidity = 10;
-
-
-float bat_voltage;
+float bat_voltage = 10;
 
 // LaskaKit microSD Card modul
 /*
@@ -98,14 +98,7 @@ float bat_voltage;
 SPIClass SPI2(HSPI);
 */
 
-void GoToSleep()
-{
-  delay(1);
-  // ESP Deep Sleep
-  Serial.println("ESP in sleep mode");
-  esp_sleep_enable_timer_wakeup(SLEEP_SEC * 1000000);
-  esp_deep_sleep_start();
-}
+
 
 void setup()
 {
@@ -119,8 +112,8 @@ void setup()
 
 
 
-
-  GoToSleep();
+  meteoLib.goToSleep(SLEEP_SEC);
+  // GoToSleep();
 }
 
 void loop()  //Není potřeba
