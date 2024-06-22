@@ -33,6 +33,15 @@ uŠup I2C - SDA GPIO42, SCL GPIO2
 uŠup SPI - MISO GPIO13, MOSI GPIO11, SCK GPIO12, CS GPIO10
 
 --------------------------------------------------
+Adafruit BME280
+--------------------------------------------------
+https://github.com/adafruit/Adafruit_BME280_Library/tree/master
+https://learn.adafruit.com/adafruit-bme280-humidity-barometric-pressure-temperature-sensor-breakout/downloads
+Adresa pro I2C: 0x77 nebo 0x76
+Umí též SPI
+
+
+--------------------------------------------------
 LaskaKit microSD Card modul (LaskaKit microSD Reader)
 --------------------------------------------------
 https://www.laskakit.cz/laskakit-microsd-card-modul/
@@ -55,6 +64,20 @@ MeteoLib meteoLib;
 const char *ssid = SSID_1; //  your network SSID (name)
 const char *password = PSWRD_1; // your network password
 
+
+#define SLEEP_SEC 15 * 60   // Measurement interval (seconds)
+
+#define SDA 19
+#define SCL 18
+#define BME280address 0x77 // (0x77) cut left and solder right pad on board
+//Adafruit_BME280 bme; //I2C
+float temperature = 10;
+float pressure = 10;
+float humidity = 10;
+
+
+float bat_voltage;
+
 // LaskaKit microSD Card modul
 /*
 // Problém je s tím, že nerozpozná kartu -> ověřit, jestli vůbec funguje SPI2
@@ -75,39 +98,29 @@ const char *password = PSWRD_1; // your network password
 SPIClass SPI2(HSPI);
 */
 
+void GoToSleep()
+{
+  delay(1);
+  // ESP Deep Sleep
+  Serial.println("ESP in sleep mode");
+  esp_sleep_enable_timer_wakeup(SLEEP_SEC * 1000000);
+  esp_deep_sleep_start();
+}
+
 void setup()
 {
   meteoLib.serialSetup(); // Nastaví sériovou linku defaultně s rychlostí 115200 baud, a počká, dokus není komunikace funkční
 
+  meteoLib.initBME280(SDA, SCL, BME280address);
+  meteoLib.readSensors(temperature, pressure, humidity);
+
   meteoLib.connectToWiFi(ssid, password); // Připojí se k WiFi s danými údaji
+  meteoLib.sendDataToTMEP(temperature, pressure, humidity, serverName); // Odešle data na TMEP.cz
 
-/*  int pokus = 0;
-  if (WiFi.status() != WL_NO_SHIELD)
-  {
-    WiFi.begin(ssid, password);
-    Serial.println(ssid);
-    Serial.println(password);
 
-    Serial.println("Pripojovani k Wifi");
-    while (WiFi.status() != WL_CONNECTED && pokus < 20)
-    {
-      delay(500);
-      Serial.print(".");
-      pokus++;
-    }
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      Serial.println("Pripojeno k WiFi");
-    }
-    else
-    {
-      Serial.println("Nepodarilo se pripojit k WiFi");
-    }
-  }    
-  else
-    Serial.println("WiFi modul není připojený, nebo nefunguje. Zkontrolujte zapojení a napájení modulu.");
-*/
 
+
+  GoToSleep();
 }
 
 void loop()  //Není potřeba
