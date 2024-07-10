@@ -1,4 +1,5 @@
 #include <arduino.h>
+
 #include "meteoLib.h"
 
 MeteoLib::MeteoLib()
@@ -55,6 +56,47 @@ void MeteoLib::goToSleep(unsigned long sleepSec)
     esp_deep_sleep_start();                            // Spuštění hlubokého spánku
 }
 
+void MeteoLib::sendBatVoltage(int ADCpin, float ADCToVolt, String serverName)
+{
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        float batVoltage = analogRead(ADCpin) * ADCToVolt;
+        long rssi = WiFi.RSSI();
+
+        Serial.print("Voltage = ");
+        Serial.print(batVoltage);
+        Serial.println(" V");
+        Serial.print("Received Signal Strength Indication = ");
+        Serial.print(rssi);
+        Serial.println(" dBm");
+
+        HTTPClient http;
+
+        String serverPath = serverName + "&v=" + batVoltage + "&rssi=" + rssi;
+        http.begin(serverPath.c_str());
+
+        int httpResponseCode = http.GET();
+
+        if (httpResponseCode > 0)
+        {
+            Serial.print("HTTP Response code: ");
+            Serial.println(httpResponseCode);
+            String payload = http.getString();
+            Serial.println(payload);
+        }
+        else
+        {
+            Serial.print("Error code: ");
+            Serial.println(httpResponseCode);
+        }
+        http.end();
+    }
+    else
+    {
+        Serial.println("Wi-Fi odpojeno");
+    }
+}
+
 void MeteoLib::initBME280(uint8_t sda, uint8_t scl, uint8_t addr)
 {
     Wire.begin(sda, scl);
@@ -74,7 +116,7 @@ void MeteoLib::initBME280(uint8_t sda, uint8_t scl, uint8_t addr)
     }
 }
 
-void MeteoLib::readSensors(float &temperature, float &pressure, float &humidity)
+void MeteoLib::readBME280(float &temperature, float &pressure, float &humidity)
 {
     temperature = bme.readTemperature();
     pressure = bme.readPressure();
@@ -91,7 +133,7 @@ void MeteoLib::readSensors(float &temperature, float &pressure, float &humidity)
     Serial.println(" %");
 }
 
-void MeteoLib::sendDataToTMEP(float &temperature, float &pressure, float &humidity, String serverName)
+void MeteoLib::sendBME280(float &temperature, float &pressure, float &humidity, String serverName)
 {
     if (WiFi.status() == WL_CONNECTED)
     {

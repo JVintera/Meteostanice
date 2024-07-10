@@ -57,8 +57,8 @@ https://github.com/LaskaKit/microSD-Reader/blob/main/README_CZ.md
 
 */
 
-#include <wifiConfig.h>
-#include <meteoLib.h>
+#include "wifiConfig.h"
+#include "meteoLib.h"
 
 MeteoLib meteoLib;
 
@@ -77,6 +77,7 @@ float temperature = 10;
 float pressure = 10;
 float humidity = 10;
 float bat_voltage = 10;
+
 
 // LaskaKit microSD Card modul
 /*
@@ -105,10 +106,12 @@ void setup()
   meteoLib.serialSetup(); // Nastaví sériovou linku defaultně s rychlostí 115200 baud, a počká, dokus není komunikace funkční
 
   meteoLib.initBME280(SDA, SCL, BME280address);
-  meteoLib.readSensors(temperature, pressure, humidity);
+  meteoLib.readBME280(temperature, pressure, humidity);
 
   meteoLib.connectToWiFi(ssid, password); // Připojí se k WiFi s danými údaji
-  meteoLib.sendDataToTMEP(temperature, pressure, humidity, serverName); // Odešle data na TMEP.cz
+  meteoLib.sendBME280(temperature, pressure, humidity, serverName); // Odešle data na TMEP.cz
+  //meteoLib.sendBatVoltage(0, 0.001763668, serverName);              // Odešle aktuální napětí na baterii a sílu wifi signálu na TMEP.cz    // 0.0049645
+  
 
 
 
