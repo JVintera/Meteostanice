@@ -73,10 +73,10 @@ const char *password = PSWRD_1; // your network password
 #define BME280address 0x77 // (0x77) cut left and solder right pad on board
 
 // Přednastavená hodnota 10 je kvůli chybě se čtením dat z BME280
-float temperature = 10;
-float pressure = 10;
-float humidity = 10;
-float bat_voltage = 10;
+// float temperature = 10;
+// float pressure = 10;
+// float humidity = 10;
+// float bat_voltage = 10;
 
 
 // LaskaKit microSD Card modul
@@ -105,21 +105,24 @@ void setup()
 {
   meteoLib.serialSetup(); // Nastaví sériovou linku defaultně s rychlostí 115200 baud, a počká, dokus není komunikace funkční
 
-  meteoLib.initBME280(SDA, SCL, BME280address);
-  meteoLib.readBME280(temperature, pressure, humidity);
+  meteoLib.readBatVoltage(0, 0.001763668); // Přečte napětí na baterii a uloží do proměnné bat_voltage
+  meteoLib.readRSSI(); // Přečte sílu wifi signálu a uloží do proměnné rssi
+
+  meteoLib.initBme280(SDA, SCL, BME280address);
+  meteoLib.readBme280Temperature();
+  meteoLib.readBme280Pressure();
+  meteoLib.readBme280Humidity();
 
   meteoLib.connectToWiFi(ssid, password); // Připojí se k WiFi s danými údaji
-  meteoLib.sendBME280(temperature, pressure, humidity, serverName); // Odešle data na TMEP.cz
-  //meteoLib.sendBatVoltage(0, 0.001763668, serverName);              // Odešle aktuální napětí na baterii a sílu wifi signálu na TMEP.cz    // 0.0049645
-  
+
+  //meteoLib.sendTemperaturePressureHumidity(meteoLib.temperature, meteoLib.pressure, meteoLib.humidity, serverName); // Odešle data na TMEP.cz
+  meteoLib.sendTemperaturePressureHumidityVoltageRssi(meteoLib.temperature, meteoLib.pressure, meteoLib.humidity, meteoLib.bat_voltage, meteoLib.rssi, serverName); // Odešle data na TMEP.cz
 
 
 
   meteoLib.goToSleep(SLEEP_SEC);
-  // GoToSleep();
 }
 
 void loop()  //Není potřeba
 {
-
 }

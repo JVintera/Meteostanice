@@ -15,19 +15,44 @@
 class MeteoLib {
     public:
         MeteoLib();
-        void serialSetup(int baudRate = 115200);
-        void connectToWiFi(const char *ssid, const char *password);
-        void goToSleep(unsigned long sleepSec);
-        void sendBatVoltage(int ADCpin = 0, float ADCToVolt = 0.0049645, String serverName = "0"); // max z ADC 843 = 4,19V, delic napeti z akumulatoru 20kOhm + 5,1kOhm
-        void initBME280(uint8_t sda = 19, uint8_t scl = 18, uint8_t addr = 0x77);
-        void readBME280(float &temperature, float &pressure, float &humidity);
-        void sendBME280(float &temperature, float &pressure, float &humidity, String serverName);
 
-    private:
+        // Pokud se neuloží naměřená hodnota, zůstane defaultně -1
+        float bat_voltage = -1;
+        long rssi = -1;
+        float temperature = -1;
+        float pressure = -1;
+        float humidity = -1;
+        float co2 = -1;
+
+        bool serialSetup(int baudRate = 115200);
+        bool connectToWiFi(const char *ssid, const char *password);
+        void goToSleep(unsigned long sleepSec);
+
+        // Init and read from sensors
+        float readBatVoltage(int ADCpin = 0, float ADCToVolt = 0.0049645); // max z ADC 843 = 4,19V, delic napeti z akumulatoru 20kOhm + 5,1kOhm
+        long readRSSI();
+        bool initBme280(uint8_t sda = 19, uint8_t scl = 18, uint8_t addr = 0x77);
+        float readBme280Temperature();
+        float readBme280Pressure();
+        float readBme280Humidity();
+
+        // Send data to server
+        void sendTemperaturePressureHumidity(float temperature, float pressure, float humidity, String serverName);
+        void sendTemperaturePressureHumidityVoltageRssi(float temperature, float pressure, float humidity, float bat_voltage, long rssi, String serverName);
+
+            /*
+            void sendBatVoltage(int ADCpin = 0, float ADCToVolt = 0.0049645, String serverName = "0"); // max z ADC 843 = 4,19V, delic napeti z akumulatoru 20kOhm + 5,1kOhm
+
+            void readBME280(float &temperature, float &pressure, float &humidity);
+            void sendBME280(float &temperature, float &pressure, float &humidity, String serverName);
+            */
+
+    private: 
         int _baudRate = 115200;
         const char *_ssid;
         const char *_password;
-        Adafruit_BME280 bme; // Instance of BME280 sensor
+
+        Adafruit_BME280 _bme; // Instance of BME280 sensor
 };
 
 
