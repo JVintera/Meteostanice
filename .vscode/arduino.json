@@ -1,6 +1,7 @@
 {
-    "port": "COM21",
-    "configuration": "PartitionScheme=default,UploadSpeed=921600,DebugLevel=none,EraseFlash=none",
-    "board": "esp32:esp32:m5stack-coreink",
-    "sketch": "ESP32 Meteo mini v3.2\\main.ino"
+    "port": "COM3",
+    "configuration": "JTAGAdapter=default,CDCOnBoot=default,PartitionScheme=default,CPUFreq=160,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=921600,DebugLevel=none,EraseFlash=none,ZigbeeMode=default",
+    "board": "esp32:esp32:esp32c3",
+    "sketch": "ESP32 Meteo mini v3.2\\meteoMini_v2\\meteoMini_v2.ino",
+    "programmer": "arduino:avrisp"
 }

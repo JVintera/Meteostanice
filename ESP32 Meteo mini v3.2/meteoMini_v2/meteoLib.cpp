@@ -181,37 +181,7 @@ float MeteoLib::readBme280Humidity()
 
 
 // Send data to server
-void MeteoLib::sendTemperaturePressureHumidity(float temperature, float pressure, float humidity, String serverName)
-{
-    if (WiFi.status() == WL_CONNECTED)
-    {
-        HTTPClient http;
-        String serverPath = serverName + "temV=" + temperature + "&humV=" + humidity + "&pressV=" + pressure;
-        http.begin(serverPath.c_str());
-
-        int httpResponseCode = http.GET();
-
-        if (httpResponseCode > 0)
-        {
-            Serial.print("HTTP Response code: ");
-            Serial.println(httpResponseCode);
-            String payload = http.getString();
-            Serial.println(payload);
-        }
-        else
-        {
-            Serial.print("Error code: ");
-            Serial.println(httpResponseCode);
-        }
-        http.end();
-    }
-    else
-    {
-        Serial.println("Wi-Fi odpojeno");
-    }
-}
-
-void MeteoLib::sendTemperaturePressureHumidityVoltageRssi(float temperature, float pressure, float humidity, float bat_voltage, long rssi, String serverName)
+void MeteoLib::sendTemperaturePressureHumidity(String serverName, float temperature, float pressure, float humidity, float bat_voltage, long rssi)
 {
     if (WiFi.status() == WL_CONNECTED)
     {
@@ -225,15 +195,19 @@ void MeteoLib::sendTemperaturePressureHumidityVoltageRssi(float temperature, flo
 
         if (httpResponseCode > 0)
         {
-            Serial.print("HTTP Response code: ");
-            Serial.println(httpResponseCode);
             String payload = http.getString();
-            Serial.println(payload);
+            #ifdef serialDebug
+                Serial.print("HTTP Response code: ");
+                Serial.println(httpResponseCode);
+                Serial.println(payload);
+            #endif
         }
         else
         {
-            Serial.print("Error code: ");
-            Serial.println(httpResponseCode);
+            #ifdef serialDebug
+                Serial.print("Error code: ");
+                Serial.println(httpResponseCode);
+            #endif
         }
         http.end();
     }
@@ -243,38 +217,33 @@ void MeteoLib::sendTemperaturePressureHumidityVoltageRssi(float temperature, flo
     }
 }
 
-/*void MeteoLib::sendBatVoltage(int ADCpin, float ADCToVolt, String serverName)
+void MeteoLib::sendTemperaturePressureHumidity(String serverName, float temperature, float pressure, float humidity, float bat_voltage)
 {
     if (WiFi.status() == WL_CONNECTED)
     {
-        float batVoltage = analogRead(ADCpin) * ADCToVolt;
-        long rssi = WiFi.RSSI();
-
-        Serial.print("Voltage = ");
-        Serial.print(batVoltage);
-        Serial.println(" V");
-        Serial.print("Received Signal Strength Indication = ");
-        Serial.print(rssi);
-        Serial.println(" dBm");
-
         HTTPClient http;
-
-        String serverPath = serverName + "&v=" + batVoltage + "&rssi=" + rssi;
+        // GUID pro teplotu "teplota", pro vlhkost "vlhkost", ...
+        // Více viz https://wiki.tmep.cz/doku.php?id=zarizeni:vlastni_hardware
+        String serverPath = serverName + "temV=" + temperature + "&humV=" + humidity + "&pressV=" + pressure + "&v=" + bat_voltage;
         http.begin(serverPath.c_str());
 
         int httpResponseCode = http.GET();
 
         if (httpResponseCode > 0)
         {
-            Serial.print("HTTP Response code: ");
-            Serial.println(httpResponseCode);
             String payload = http.getString();
-            Serial.println(payload);
+            #ifdef serialDebug
+                Serial.print("HTTP Response code: ");
+                Serial.println(httpResponseCode);
+                Serial.println(payload);
+            #endif
         }
         else
         {
-            Serial.print("Error code: ");
-            Serial.println(httpResponseCode);
+            #ifdef serialDebug
+                Serial.print("Error code: ");
+                Serial.println(httpResponseCode);
+            #endif
         }
         http.end();
     }
@@ -282,30 +251,51 @@ void MeteoLib::sendTemperaturePressureHumidityVoltageRssi(float temperature, flo
     {
         Serial.println("Wi-Fi odpojeno");
     }
-}*/
+}
 
-/*void MeteoLib::readBME280(float &temperature, float &pressure, float &humidity)
-{
-    temperature = bme.readTemperature();
-    pressure = bme.readPressure();
-    humidity = bme.readHumidity();
-
-    Serial.print("Temperature = ");
-    Serial.print(temperature);
-    Serial.println(" *C");
-    Serial.print("Pressure = ");
-    Serial.print(pressure);
-    Serial.println(" Pa");
-    Serial.print("Humidity = ");
-    Serial.print(humidity);
-    Serial.println(" %");
-}*/
-
-/*void MeteoLib::sendBME280(float &temperature, float &pressure, float &humidity, String serverName)
+void MeteoLib::sendTemperaturePressureHumidity(String serverName, float temperature, float pressure, float humidity, long rssi)
 {
     if (WiFi.status() == WL_CONNECTED)
     {
         HTTPClient http;
+        // GUID pro teplotu "teplota", pro vlhkost "vlhkost", ...
+        // Více viz https://wiki.tmep.cz/doku.php?id=zarizeni:vlastni_hardware
+        String serverPath = serverName + "temV=" + temperature + "&humV=" + humidity + "&pressV=" + pressure + "&rssi=" + rssi;
+        http.begin(serverPath.c_str());
+
+        int httpResponseCode = http.GET();
+
+        if (httpResponseCode > 0)
+        {
+            String payload = http.getString();
+#ifdef serialDebug
+            Serial.print("HTTP Response code: ");
+            Serial.println(httpResponseCode);
+            Serial.println(payload);
+#endif
+        }
+        else
+        {
+#ifdef serialDebug
+            Serial.print("Error code: ");
+            Serial.println(httpResponseCode);
+#endif
+        }
+        http.end();
+    }
+    else
+    {
+        Serial.println("Wi-Fi odpojeno");
+    }
+}
+
+void MeteoLib::sendTemperaturePressureHumidity(String serverName, float temperature, float pressure, float humidity)
+{
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        HTTPClient http;
+        // GUID pro teplotu "teplota", pro vlhkost "vlhkost", ...
+        // Více viz https://wiki.tmep.cz/doku.php?id=zarizeni:vlastni_hardware
         String serverPath = serverName + "temV=" + temperature + "&humV=" + humidity + "&pressV=" + pressure;
         http.begin(serverPath.c_str());
 
@@ -313,15 +303,19 @@ void MeteoLib::sendTemperaturePressureHumidityVoltageRssi(float temperature, flo
 
         if (httpResponseCode > 0)
         {
-            Serial.print("HTTP Response code: ");
-            Serial.println(httpResponseCode);
             String payload = http.getString();
-            Serial.println(payload);
+            #ifdef serialDebug
+                Serial.print("HTTP Response code: ");
+                Serial.println(httpResponseCode);
+                Serial.println(payload);
+            #endif
         }
         else
         {
-            Serial.print("Error code: ");
-            Serial.println(httpResponseCode);
+            #ifdef serialDebug
+                Serial.print("Error code: ");
+                Serial.println(httpResponseCode);
+            #endif
         }
         http.end();
     }
@@ -329,4 +323,4 @@ void MeteoLib::sendTemperaturePressureHumidityVoltageRssi(float temperature, flo
     {
         Serial.println("Wi-Fi odpojeno");
     }
-}*/
+}

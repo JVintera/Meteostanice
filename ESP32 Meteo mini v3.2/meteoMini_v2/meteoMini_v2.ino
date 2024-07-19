@@ -115,10 +115,8 @@ void setup()
 
   meteoLib.connectToWiFi(ssid, password); // Připojí se k WiFi s danými údaji
 
-  //meteoLib.sendTemperaturePressureHumidity(meteoLib.temperature, meteoLib.pressure, meteoLib.humidity, serverName); // Odešle data na TMEP.cz
-  meteoLib.sendTemperaturePressureHumidityVoltageRssi(meteoLib.temperature, meteoLib.pressure, meteoLib.humidity, meteoLib.bat_voltage, meteoLib.rssi, serverName); // Odešle data na TMEP.cz
-
-
+  // meteoLib.sendTemperaturePressureHumidity(serverName, meteoLib.temperature, meteoLib.pressure, meteoLib.humidity); // Odešle data na TMEP.cz
+  meteoLib.sendTemperaturePressureHumidity(serverName, meteoLib.temperature, meteoLib.pressure, meteoLib.humidity, meteoLib.bat_voltage, meteoLib.rssi); // Odešle data na TMEP.cz
 
   meteoLib.goToSleep(SLEEP_SEC);
 }
