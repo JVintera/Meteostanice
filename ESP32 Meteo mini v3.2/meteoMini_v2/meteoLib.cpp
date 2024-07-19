@@ -159,11 +159,11 @@ float MeteoLib::readBme280Temperature()
 
 float MeteoLib::readBme280Pressure()
 {
-    pressure = _bme.readPressure();
+    pressure = _bme.readPressure() / 100;
     #ifdef serialDebug
         Serial.print("Pressure = ");
         Serial.print(pressure);
-        Serial.println(" Pa");
+        Serial.println(" hPa");
     #endif
     return pressure;
 }

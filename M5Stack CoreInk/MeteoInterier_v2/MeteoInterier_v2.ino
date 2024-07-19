@@ -153,7 +153,7 @@ void setup() {
   if (qmp6988.update()) {
     // Uložení hodnot
     tempQMP = qmp6988.cTemp;
-    pressQMP = qmp6988.pressure;
+    pressQMP = qmp6988.pressure / 100;
     altQMP = qmp6988.altitude;
   }
 

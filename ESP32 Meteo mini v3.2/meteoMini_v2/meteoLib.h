@@ -8,9 +8,11 @@
 #include <Wire.h>
 #include <WiFi.h>
 
-#include <HTTPClient.h>      //HttpClient by Adrian McEwen..., v2.2.0
-#include <Adafruit_Sensor.h> //Adafruit Unified Sensor by Adafruit, v1.1.4
-#include <Adafruit_BME280.h> //Adafruit BME280 Library by Adafruit, v2.2.4
+#include <HTTPClient.h>         //HttpClient by Adrian McEwen..., v2.2.0
+#include <Adafruit_Sensor.h>    //Adafruit Unified Sensor by Adafruit, v1.1.4
+#include <Adafruit_BME280.h>    //Adafruit BME280 Library by Adafruit, v2.2.4
+#include <OneWire.h>            //OneWire by Jim Studt..., v2.3.8
+#include <DallasTemperature.h>  //DallasTemperature by Miles Burton..., v3.9.0
 
 class MeteoLib {
 private:
