@@ -1,0 +1,19 @@
+test_variable = " this test "
+
+# WiFi
+CIRCUITPY_WIFI_SSID = "ssid" 
+CIRCUITPY_WIFI_PASSWORD = "pswd"
+CIRCUITPY_WEB_API_PORT = 80 
+CIRCUITPY_WEB_API_PASSWORD = "passw0rd" 
+
+
+
+# Adafruit IO https://io.adafruit.com/
+ADAFRUIT_AIO_USERNAME = "uname"
+ADAFRUIT_AIO_KEY      = "aio_key"
+
+
+
+
+# OpenWeather https://openweathermap.org/api
+openweather_token = "token"  
