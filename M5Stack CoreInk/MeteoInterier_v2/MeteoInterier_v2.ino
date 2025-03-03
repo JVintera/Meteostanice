@@ -1,4 +1,4 @@
-// DODĚLAT
+// DODĚLAT  
 // x   Stav baterie zobrazit
 // x   Při deep sleep se vypíná baterie
 // Signalizovat nizky stav baterie blikanim LED
