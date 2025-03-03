@@ -12,7 +12,7 @@ CIRCUITPY_WEB_API_PASSWORD = "passw0rd"
 ADAFRUIT_AIO_USERNAME = "uname"
 ADAFRUIT_AIO_KEY      = "aio_key"
 
-
+ 
 
 
 # OpenWeather https://openweathermap.org/api
